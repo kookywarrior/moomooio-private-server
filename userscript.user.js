@@ -25,6 +25,7 @@
 		)
 	}
 	const urlobj = getLocation(window.prompt("URL", ""))
+    console.log(urlobj.protocol)
 	
 	if (!urlobj?.host) return
 
@@ -32,7 +33,7 @@
 	let ws = window.WebSocket
 	class PrivateServer extends ws {
 		constructor() {
-			super(`${urlobj.protocol == "https" ? "wss" : "ws"}://${urlobj.host}/server`)
+			super(`${urlobj.protocol.includes("https") ? "wss" : "ws"}://${urlobj.host}/server`)
 		}
 	}
 	window.WebSocket = PrivateServer
