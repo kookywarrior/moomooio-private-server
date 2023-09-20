@@ -503,7 +503,7 @@ module.exports = function (
 				if (item.pps) {
 					this.pps += item.pps
 				}
-				objectManager.add(objectManager.objects.length, tmpX, tmpY, this.dir, item.scale, item.type, item, false, this)
+				objectManager.add(objectManager.objects.length, tmpX, tmpY, this.dir, item.scale, item.type, item, true, this)
 			}
 			if (worked) {
 				this.useRes(item)
