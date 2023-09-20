@@ -464,6 +464,12 @@ module.exports = function (
 		server.send(this.id, "14", [index, this.itemCounts[index]])
 	}
 
+	// CHANGE ITEM ALL COUNT:
+	this.changeItemAllCount = function (index, value) {
+		this.itemCounts[index] = value
+		server.send(this.id, "14", [index, this.itemCounts[index]])
+	}
+
 	// BUILD:
 	this.buildItem = function (item) {
 		var tmpS = this.scale + item.scale + (item.placeOffset || 0)
@@ -503,7 +509,7 @@ module.exports = function (
 				if (item.pps) {
 					this.pps += item.pps
 				}
-				objectManager.add(objectManager.objects.length, tmpX, tmpY, this.dir, item.scale, item.type, item, true, this)
+				objectManager.add(objectManager.objects.length, tmpX, tmpY, this.dir, item.scale, item.type, item, false, this)
 			}
 			if (worked) {
 				this.useRes(item)
