@@ -43,7 +43,6 @@ module.exports = function (GameObject, gameObjects, UTILS, config, players, serv
 
 	// DISABLE OBJ:
 	this.disableObj = function (obj) {
-		server.sendAll("12", [obj.sid])
 		obj.active = false
 		if (server) {
 			if (obj.owner && obj.pps) obj.owner.pps -= obj.pps
