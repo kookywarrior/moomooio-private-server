@@ -59,14 +59,22 @@ Add the prefix at the beginning of every command:
 
 Not recommended to change if you don't know anything about coding:
 
-| Variables | Value           |
-| --------- | --------------- |
-| PORT      | Default is 1234 |
-| PREFIX    | Default is !    |
-| PASSWORD  | Default is kooky|
+| Variables | Value            |
+| --------- | ---------------- |
+| PORT      | Default is 1234  |
+| PREFIX    | Default is !     |
+| PASSWORD  | Default is kooky |
+| MODE      | Default is NORMAL|
+
+## Changing Mode
+In .env file, edit `MODE=NORMAL` to other modes
+Available Modes:
+- NORMAL
+- SANDBOX
+- HOCKEY
 
 ## Reference
 
-- https://moomoo.io/bundle.js
+- https://moomoo.io/assets/index-ffd48cb5.js
 - https://github.com/Picoseconds/sanctuary
 - https://github.com/wwwg/m.io
