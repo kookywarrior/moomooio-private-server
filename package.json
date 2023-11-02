@@ -1,13 +1,13 @@
 {
   "name": "moomooio-private-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "keywords": [],
-  "author": "Kooky Warrior",
+  "author": "KOOKY WARRIOR",
   "license": "MIT",
   "dependencies": {
     "dotenv": "^16.3.1",
