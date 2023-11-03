@@ -49,11 +49,11 @@ Add the prefix at the beginning of every command:
 | speed     | `number` (default is 0.0016)     |
 | tp        | `player_sid` OR `x` `y`          |
 | v         | `ruby/diamond/gold/normal`       |
-| sb        | none                             |
 | die       | none                             |
 | upgrade   | `integer_number`                 |
 | dmg       | none OR `number`                 |
 | breakall  | none                             |
+| start     | none         (for HOCKEY MODE)   |
 
 ## Environment Variables
 
