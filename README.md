@@ -10,10 +10,10 @@ This guide will show you how to set up your own private server and allow others 
 
 ## Hosting
 
-1. Download and unzip [this](https://github.com/kookywarrior/moomooio-private-server/archive/refs/heads/main.zip). 
-2. Open the terminal and navigate to the destination path of the unzipped folder.
-3. Run this command: `npm install`.
-4. Then follow by this command: `node .`
+1. Download and unzip [this](https://github.com/kookywarrior/moomooio-private-server/archive/refs/heads/main.zip)
+2. Open terminal in the unzipped folder. [How to open terminal in unzipped folder](https://www.groovypost.com/howto/open-command-window-terminal-window-specific-folder-windows-mac-linux)
+3. Run this command: `npm install`
+4. Then follow by this command: `npm run start`
 
 ## Play Locally
 
