@@ -17,14 +17,17 @@ module.exports = function (
 	accessories,
 	server,
 	scoreCallback,
-	iconCallback
+	iconCallback,
+	MODE
 ) {
 	this.id = id
 	this.sid = sid
 	this.tmpScore = 0
 	this.team = null
-	this.skinIndex = 0
-	this.tailIndex = 0
+	this.skinIndex = MODE === "HOCKEY" && this.sid !== 1 ? 12 : 0
+	this.tailIndex = MODE === "HOCKEY" && this.sid !== 1 ? 11 : 0
+	this.skin = MODE === "HOCKEY" && this.sid !== 1 ? { spdMult: 1.16 } : null
+	this.tail = MODE === "HOCKEY" && this.sid !== 1 ? { spdMult: 1.35 } : null
 	this.primary = null
 	this.primaryVariant = 0
 	this.secondary = null
@@ -71,7 +74,7 @@ module.exports = function (
 		this.animSpeed = 0
 		this.mouseState = 0
 		this.buildIndex = -1
-		this.weaponIndex = 0
+		this.weaponIndex = MODE === "HOCKEY" ? 6 : 0
 		this.dmgOverTime = {}
 		this.noMovTimer = 0
 		this.maxXP = 300
@@ -250,6 +253,7 @@ module.exports = function (
 				(this.tail ? this.tail.spdMult || 1 : 1) *
 				(this.y <= config.snowBiomeTop ? (this.skin && this.skin.coldM ? 1 : config.snowSpeed) : 1) *
 				this.slowMult
+
 			if (!this.zIndex && this.y >= config.mapScale / 2 - config.riverWidth / 2 && this.y <= config.mapScale / 2 + config.riverWidth / 2) {
 				if (this.skin && this.skin.watrImm) {
 					spdMult *= 0.75
@@ -365,6 +369,46 @@ module.exports = function (
 				if (worked) {
 					this.reloads[this.weaponIndex] = items.weapons[this.weaponIndex].speed * (this.skin ? this.skin.atkSpd || 1 : 1)
 				}
+			}
+		}
+
+		if (MODE === "HOCKEY" && this.sid === 1 && config.isStarted) {
+			if (this.x - this.scale < 3000 + 43 || this.x + this.scale > 3000 + 43 + (40 - 2) * 43 * 2) {
+				if (this.y - this.scale < 3000 + 43 + 6 * 43 * 2 || this.y + this.scale > 3000 + 43 + 12 * 43 * 2) {
+					this.xVel = -this.xVel * 5
+				} else if (this.x + this.scale < 3000 - 43) {
+					Array.from(players).forEach((tmpPlayer) => {
+						server.sendAll("ch", [tmpPlayer.sid, `Team 2 has won the game!`])
+					})
+					config.isStarted = false
+				} else if (this.x - this.scale > 3000 + 43 + (40 - 1) * 43 * 2) {
+					Array.from(players).forEach((tmpPlayer) => {
+						server.sendAll("ch", [tmpPlayer.sid, `Team 1 has won the game!`])
+					})
+					config.isStarted = false
+				}
+			}
+			if (
+				((this.x + this.scale > 3000 - 43 && this.x - this.scale < 3000 + 43) ||
+					(this.x + this.scale > 3000 + 43 + (40 - 2) * 43 * 2 && this.x - this.scale < 3000 + 43 + (40 - 1) * 43 * 2)) &&
+				(this.y - this.scale < 3000 + 43 + 6 * 43 * 2 || this.y + this.scale > 3000 + 43 + 12 * 43 * 2)
+			) {
+				this.yVel = -this.yVel * 5
+			} else if (this.y - this.scale < 3000 + 43 || this.y + this.scale > 3000 + 43 + (20 - 2) * 43 * 2) {
+				this.yVel = -this.yVel * 5
+			}
+		}
+
+		if (MODE === "HOCKEY" && this.sid !== 1) {
+			if (this.x - this.scale < 3000 - 43) {
+				this.x = this.scale + 3000 - 43
+			} else if (this.x + this.scale > 3000 + 43 + (40 - 1) * 43 * 2) {
+				this.x = 3000 + 43 + (40 - 1) * 43 * 2 - this.scale
+			}
+			if (this.y - this.scale < 3000 - 43) {
+				this.y = this.scale + 3000 - 43
+			} else if (this.y + this.scale > 3000 + 43 + (20 - 1) * 43 * 2) {
+				this.y = 3000 + 43 + (20 - 1) * 43 * 2 - this.scale
 			}
 		}
 	}
@@ -571,39 +615,41 @@ module.exports = function (
 		var hitObjs = {}
 		var tmpDist, tmpDir, tmpObj, hitSomething
 		var tmpList = objectManager.getGridArrays(this.x, this.y, items.weapons[this.weaponIndex].range)
-		for (var t = 0; t < tmpList.length; ++t) {
-			for (let i = 0; i < tmpList[t].length; ++i) {
-				tmpObj = tmpList[t][i]
-				if (tmpObj.active && !tmpObj.dontGather && !hitObjs[tmpObj.sid] && tmpObj.visibleToPlayer(this)) {
-					tmpDist = UTILS.getDistance(this.x, this.y, tmpObj.x, tmpObj.y) - tmpObj.scale
-					if (tmpDist <= items.weapons[this.weaponIndex].range) {
-						tmpDir = UTILS.getDirection(tmpObj.x, tmpObj.y, this.x, this.y)
-						if (UTILS.getAngleDist(tmpDir, this.dir) <= config.gatherAngle) {
-							hitObjs[tmpObj.sid] = 1
-							if (tmpObj.health) {
-								if (
-									tmpObj.changeHealth(
-										-items.weapons[this.weaponIndex].dmg * variantDmg * (items.weapons[this.weaponIndex].sDmg || 1) * (this.skin && this.skin.bDmg ? this.skin.bDmg : 1),
-										this
-									)
-								) {
-									for (var x = 0; x < tmpObj.req.length; ) {
-										this.addResource(config.resourceTypes.indexOf(tmpObj.req[x]), tmpObj.req[x + 1])
-										x += 2
+		if (config.canHitObj) {
+			for (var t = 0; t < tmpList.length; ++t) {
+				for (let i = 0; i < tmpList[t].length; ++i) {
+					tmpObj = tmpList[t][i]
+					if (tmpObj.active && !tmpObj.dontGather && !hitObjs[tmpObj.sid] && tmpObj.visibleToPlayer(this)) {
+						tmpDist = UTILS.getDistance(this.x, this.y, tmpObj.x, tmpObj.y) - tmpObj.scale
+						if (tmpDist <= items.weapons[this.weaponIndex].range) {
+							tmpDir = UTILS.getDirection(tmpObj.x, tmpObj.y, this.x, this.y)
+							if (UTILS.getAngleDist(tmpDir, this.dir) <= config.gatherAngle) {
+								hitObjs[tmpObj.sid] = 1
+								if (tmpObj.health) {
+									if (
+										tmpObj.changeHealth(
+											-items.weapons[this.weaponIndex].dmg * variantDmg * (items.weapons[this.weaponIndex].sDmg || 1) * (this.skin && this.skin.bDmg ? this.skin.bDmg : 1),
+											this
+										)
+									) {
+										for (var x = 0; x < tmpObj.req.length; ) {
+											this.addResource(config.resourceTypes.indexOf(tmpObj.req[x]), tmpObj.req[x + 1])
+											x += 2
+										}
+										objectManager.disableObj(tmpObj)
+										server.sendAll("12", [tmpObj.sid])
 									}
-									objectManager.disableObj(tmpObj)
-									server.sendAll("12", [tmpObj.sid])
+								} else {
+									this.earnXP(4 * items.weapons[this.weaponIndex].gather)
+									var count = items.weapons[this.weaponIndex].gather + (tmpObj.type == 3 ? 4 : 0)
+									if (this.skin && this.skin.extraGold) {
+										this.addResource(3, 1)
+									}
+									this.addResource(tmpObj.type, count)
 								}
-							} else {
-								this.earnXP(4 * items.weapons[this.weaponIndex].gather)
-								var count = items.weapons[this.weaponIndex].gather + (tmpObj.type == 3 ? 4 : 0)
-								if (this.skin && this.skin.extraGold) {
-									this.addResource(3, 1)
-								}
-								this.addResource(tmpObj.type, count)
+								hitSomething = true
+								objectManager.hitObj(tmpObj, tmpDir)
 							}
-							hitSomething = true
-							objectManager.hitObj(tmpObj, tmpDir)
 						}
 					}
 				}
@@ -627,6 +673,7 @@ module.exports = function (
 						}
 
 						// MELEE HIT PLAYER:
+
 						var dmgMlt = variantDmg
 						if (
 							tmpObj.weaponIndex != undefined &&
@@ -641,8 +688,15 @@ module.exports = function (
 								(this.skin && this.skin.dmgMultO ? this.skin.dmgMultO : 1) *
 								(this.tail && this.tail.dmgMultO ? this.tail.dmgMultO : 1)
 						var tmpSpd = 0.3 * (tmpObj.weightM || 1) + (items.weapons[this.weaponIndex].knock || 0)
-						tmpObj.xVel += tmpSpd * mathCOS(tmpDir)
-						tmpObj.yVel += tmpSpd * mathSIN(tmpDir)
+						if (MODE !== "HOCKEY") {
+							tmpObj.xVel += tmpSpd * mathCOS(tmpDir)
+							tmpObj.yVel += tmpSpd * mathSIN(tmpDir)
+						}
+						if (MODE === "HOCKEY" && tmpObj.sid === 1) {
+							tmpObj.xVel += tmpSpd * mathCOS(tmpDir) * 1.2
+							tmpObj.yVel += tmpSpd * mathSIN(tmpDir) * 1.2
+							tmpObj.dir = tmpDir
+						}
 						if (this.skin && this.skin.healD) {
 							this.changeHealth(dmgVal * dmgMlt * this.skin.healD, this)
 						}
@@ -655,12 +709,12 @@ module.exports = function (
 						if (tmpObj.tail && tmpObj.tail.dmg && dmgMlt == 1) {
 							this.changeHealth(-dmgVal * tmpObj.tail.dmg, tmpObj)
 						}
-						if (tmpObj.dmgOverTime && this.skin && this.skin.poisonDmg && !(tmpObj.skin && tmpObj.skin.poisonRes)) {
+						if (MODE !== "HOCKEY" && tmpObj.dmgOverTime && this.skin && this.skin.poisonDmg && !(tmpObj.skin && tmpObj.skin.poisonRes)) {
 							tmpObj.dmgOverTime.dmg = this.skin.poisonDmg
 							tmpObj.dmgOverTime.time = this.skin.poisonTime || 1
 							tmpObj.dmgOverTime.doer = this
 						}
-						if (tmpObj.dmgOverTime && applyPoison && !(tmpObj.skin && tmpObj.skin.poisonRes)) {
+						if (MODE !== "HOCKEY" && tmpObj.dmgOverTime && applyPoison && !(tmpObj.skin && tmpObj.skin.poisonRes)) {
 							tmpObj.dmgOverTime.dmg = 5
 							tmpObj.dmgOverTime.time = 5
 							tmpObj.dmgOverTime.doer = this
@@ -669,7 +723,9 @@ module.exports = function (
 							this.xVel -= tmpObj.skin.dmgK * mathCOS(tmpDir)
 							this.yVel -= tmpObj.skin.dmgK * mathSIN(tmpDir)
 						}
-						tmpObj.changeHealth(-dmgVal * dmgMlt, this, this)
+						if (MODE !== "HOCKEY") {
+							tmpObj.changeHealth(-dmgVal * dmgMlt, this, this)
+						}
 					}
 				}
 			}
