@@ -3,17 +3,21 @@ const WebSocket = require("ws")
 const msgpack = require("msgpack-lite")
 const http = require("http")
 const url = require("url")
+const inquirer = require("inquirer")
 
+var MODE = process.env.MODE
+var PASSWORD = process.env.PASSWORD
+var PREFIX = process.env.PREFIX
 const PORT = process.env.PORT || 1234
-const server = new WebSocket.Server({ noServer: true })
+var server = new WebSocket.Server({ noServer: true })
 
 let delta,
 	now,
 	lastUpdate = Date.now()
-let ais = []
-let players = []
-let gameObjects = []
-let projectiles = []
+var ais = []
+var players = []
+var gameObjects = []
+var projectiles = []
 function findPlayerByID(id) {
 	for (let i = 0; i < players.length; ++i) {
 		if (players[i].id === id) {
@@ -50,7 +54,7 @@ let tribeManager = new TribeManager(Tribe, findPlayerBySID, server)
 let hats = store.hats,
 	accessories = store.accessories
 
-const connection = {}
+var connection = {}
 server.send = function (id, type, data = []) {
 	if (connection[id]) {
 		connection[id].send(new Uint8Array(Array.from(msgpack.encode([UTILS.OldToNew(type, "RECEIVE"), data]))))
@@ -83,7 +87,7 @@ server.addListener("connection", function (conn) {
 	conn.on("close", function () {
 		let tmpPlayer = findPlayerByID(conn.id)
 		if (!tmpPlayer) return
-		if (tmpPlayer.team && process.env.MODE !== "HOCKEY") {
+		if (tmpPlayer.team && MODE !== "HOCKEY") {
 			if (tmpPlayer.isLeader) {
 				server.sendAll("ad", [tmpPlayer.team])
 				tribeManager.deleteTribe(tmpPlayer.team)
@@ -148,7 +152,7 @@ server.addListener("connection", function (conn) {
 		}
 
 		function enterGame(data) {
-			if (process.env.MODE === "HOCKEY" && config.isStarted) return
+			if (MODE === "HOCKEY" && config.isStarted) return
 			let tmpPlayer = findPlayerByID(conn.id)
 			if (tmpPlayer) {
 				tmpPlayer.spawn(data.moofoll)
@@ -202,7 +206,7 @@ server.addListener("connection", function (conn) {
 		}
 
 		function selectToBuild(index, wpn) {
-			if (process.env.MODE === "HOCKEY") return
+			if (MODE === "HOCKEY") return
 			let tmpPlayer = findPlayerByID(conn.id)
 			if (tmpPlayer) {
 				if (wpn) {
@@ -239,25 +243,25 @@ server.addListener("connection", function (conn) {
 		function sendMessage(message) {
 			let tmpPlayer = findPlayerByID(conn.id)
 			if (!tmpPlayer) return
-			if (message === `${process.env.PREFIX}login ${process.env.PASSWORD}` && !tmpPlayer.admin) {
+			if (message === `${PREFIX}login ${PASSWORD}` && !tmpPlayer.admin) {
 				tmpPlayer.admin = true
 				return
 			}
-			if (message.startsWith(process.env.PREFIX) && tmpPlayer.admin) {
-				if (message === `${process.env.PREFIX}setup`) {
+			if (message.startsWith(PREFIX) && tmpPlayer.admin) {
+				if (message === `${PREFIX}setup`) {
 					for (let i = 0; i < 9; i++) {
 						tmpPlayer.addResource(3, 99999, true)
 					}
 					tmpPlayer.addResource(2, 99999, true)
 					tmpPlayer.addResource(1, 99999, true)
 					tmpPlayer.addResource(0, 99999, true)
-				} else if (message.startsWith(`${process.env.PREFIX}speed`)) {
-					var speedmlt = message.replace(process.env.PREFIX + "speed ", "")
+				} else if (message.startsWith(`${PREFIX}speed`)) {
+					var speedmlt = message.replace(PREFIX + "speed ", "")
 					if (UTILS.isNumber(parseFloat(speedmlt))) {
 						tmpPlayer.speed = parseFloat(speedmlt)
 					}
-				} else if (message.startsWith(`${process.env.PREFIX}tp`)) {
-					var tmpArgs = message.replace(process.env.PREFIX + "tp ", "").split(" ")
+				} else if (message.startsWith(`${PREFIX}tp`)) {
+					var tmpArgs = message.replace(PREFIX + "tp ", "").split(" ")
 					if (tmpArgs[1] == null) {
 						var tmpObj = findPlayerBySID(parseInt(tmpArgs[0]))
 						if (tmpObj) {
@@ -272,8 +276,8 @@ server.addListener("connection", function (conn) {
 							tmpPlayer.y = tmpY
 						}
 					}
-				} else if (message.startsWith(`${process.env.PREFIX}v`)) {
-					var msg = message.replace(process.env.PREFIX + "v ", "")
+				} else if (message.startsWith(`${PREFIX}v`)) {
+					var msg = message.replace(PREFIX + "v ", "")
 					switch (msg) {
 						case "ruby":
 							tmpPlayer.weaponXP[tmpPlayer.weaponIndex] = 12000
@@ -288,26 +292,26 @@ server.addListener("connection", function (conn) {
 							tmpPlayer.weaponXP[tmpPlayer.weaponIndex] = 0
 							break
 					}
-				} else if (message === process.env.PREFIX + "die") {
+				} else if (message === PREFIX + "die") {
 					tmpPlayer.kill(tmpPlayer)
-				} else if (message.startsWith(`${process.env.PREFIX}upgrade`)) {
-					var msg = message.replace(process.env.PREFIX + "upgrade ", "")
+				} else if (message.startsWith(`${PREFIX}upgrade`)) {
+					var msg = message.replace(PREFIX + "upgrade ", "")
 					sendUpgrade(parseInt(msg))
-				} else if (message.startsWith(process.env.PREFIX + "dmg")) {
-					if (message === process.env.PREFIX + "dmg") {
+				} else if (message.startsWith(PREFIX + "dmg")) {
+					if (message === PREFIX + "dmg") {
 						tmpPlayer.customDmg = null
 					} else {
-						var dmg = message.replace(process.env.PREFIX + "dmg ", "")
+						var dmg = message.replace(PREFIX + "dmg ", "")
 						if (UTILS.isNumber(parseFloat(dmg))) {
 							tmpPlayer.customDmg = parseFloat(dmg)
 						}
 					}
-				} else if (message === process.env.PREFIX + "breakall") {
+				} else if (message === PREFIX + "breakall") {
 					objectManager.removeAllItems(tmpPlayer.sid, server)
 					for (let i = 0; i < items.groups.length; i++) {
 						tmpPlayer.changeItemAllCount(i, 0)
 					}
-				} else if (process.env.MODE === "HOCKEY" && message === process.env.PREFIX + "start" && !config.isStarted) {
+				} else if (MODE === "HOCKEY" && message === PREFIX + "start" && !config.isStarted) {
 					var tmpObj = findPlayerBySID(1)
 					if (tmpObj) {
 						tmpObj.spawn(false)
@@ -379,7 +383,7 @@ server.addListener("connection", function (conn) {
 		}
 
 		function storeFunction(type, id, index) {
-			if (process.env.MODE === "HOCKEY") return
+			if (MODE === "HOCKEY") return
 			let tmpPlayer = findPlayerByID(conn.id)
 			if (tmpPlayer) {
 				var tmpObj = null
@@ -428,7 +432,7 @@ server.addListener("connection", function (conn) {
 		}
 
 		function createAllaince(name) {
-			if (process.env.MODE === "HOCKEY") return
+			if (MODE === "HOCKEY") return
 			if (typeof name !== "string" || name.length <= 0) return
 
 			let tmpPlayer = findPlayerByID(conn.id)
@@ -442,7 +446,7 @@ server.addListener("connection", function (conn) {
 		}
 
 		function leaveAlliance() {
-			if (process.env.MODE === "HOCKEY") return
+			if (MODE === "HOCKEY") return
 			let tmpPlayer = findPlayerByID(conn.id)
 			if (tmpPlayer) {
 				if (tmpPlayer.isLeader) {
@@ -456,7 +460,7 @@ server.addListener("connection", function (conn) {
 		}
 
 		function kickFromClan(sid) {
-			if (process.env.MODE === "HOCKEY") return
+			if (MODE === "HOCKEY") return
 			let tmpPlayer = findPlayerByID(conn.id)
 			if (tmpPlayer && tmpPlayer.isLeader) {
 				const tmpObj = findPlayerBySID(sid)
@@ -537,7 +541,8 @@ server.addListener("connection", function (conn) {
 		accessories,
 		server,
 		scoreCallback,
-		iconCallback
+		iconCallback,
+		MODE
 	)
 	players.push(tmpA)
 	tmpA.visible = false
@@ -907,69 +912,90 @@ function addAnimal() {
 	}
 }
 
-if (["NORMAL", "SANDBOX", "ZOMBIE"].includes(process.env.MODE)) {
-	config.inSandbox = process.env.MODE === "SANDBOX"
-	addBossArenaStones(config.totalRocks - 1, config.rockScales[1], config.mapScale / 2, config.mapScale - config.snowBiomeTop / 2)
-	addTree(200)
-	addBush(100)
-	addCacti(20)
-	addStoneGold(100, true)
-	addStoneGold(10, false)
-	addRiverStone(15)
-	addAnimal()
-} else if (process.env.MODE === "HOCKEY") {
-	config.canHitObj = false
-	for (let i = 0; i < 40; i++) {
-		objectManager.add(objectManager.objects.length, 3000 + i * items.list[18].scale * 2, 3000, 0, items.list[18].scale, items.list[18].id, items.list[18])
-		objectManager.add(
-			objectManager.objects.length,
-			3000 + i * items.list[18].scale * 2,
-			3000 + 19 * items.list[18].scale * 2,
-			0,
-			items.list[18].scale,
-			items.list[18].id,
-			items.list[18]
+function setupServer() {
+	config.isStarted = false
+	ais = []
+	players = []
+	gameObjects = []
+	projectiles = []
+	connection = []
+	sidCount = 0
+	objectManager = new ObjectManager(GameObject, gameObjects, UTILS, config, players, server)
+	aiManager = new AiManager(ais, AI, players, items, objectManager, config, UTILS, scoreCallback, server)
+	projectileManager = new ProjectileManager(Projectile, projectiles, players, ais, objectManager, items, config, UTILS, server)
+	tribeManager = new TribeManager(Tribe, findPlayerBySID, server)
+
+	server.clients.forEach((socket) => {
+		if (socket.readyState === WebSocket.OPEN) {
+			socket.close()
+		}
+	})
+
+	if (["NORMAL", "SANDBOX", "ZOMBIE"].includes(MODE)) {
+		config.inSandbox = MODE === "SANDBOX"
+		addBossArenaStones(config.totalRocks - 1, config.rockScales[1], config.mapScale / 2, config.mapScale - config.snowBiomeTop / 2)
+		addTree(200)
+		addBush(100)
+		addCacti(20)
+		addStoneGold(100, true)
+		addStoneGold(10, false)
+		addRiverStone(15)
+		addAnimal()
+	} else if (MODE === "HOCKEY") {
+		config.canHitObj = false
+		for (let i = 0; i < 40; i++) {
+			objectManager.add(objectManager.objects.length, 3000 + i * items.list[18].scale * 2, 3000, 0, items.list[18].scale, items.list[18].id, items.list[18])
+			objectManager.add(
+				objectManager.objects.length,
+				3000 + i * items.list[18].scale * 2,
+				3000 + 19 * items.list[18].scale * 2,
+				0,
+				items.list[18].scale,
+				items.list[18].id,
+				items.list[18]
+			)
+		}
+		for (let i = 0; i < 20; i++) {
+			if (i >= 7 && i <= 12) continue
+			objectManager.add(
+				objectManager.objects.length,
+				3000,
+				3000 + i * items.list[18].scale * 2,
+				Math.PI / 2,
+				items.list[18].scale,
+				items.list[18].id,
+				items.list[18]
+			)
+			objectManager.add(
+				objectManager.objects.length,
+				3000 + 39 * items.list[18].scale * 2,
+				3000 + i * items.list[18].scale * 2,
+				Math.PI / 2,
+				items.list[18].scale,
+				items.list[18].id,
+				items.list[18]
+			)
+		}
+		sidCount++
+		let tmpA = new Player(
+			UTILS.randomString(10),
+			sidCount,
+			config,
+			UTILS,
+			projectileManager,
+			objectManager,
+			players,
+			ais,
+			items,
+			hats,
+			accessories,
+			server,
+			scoreCallback,
+			iconCallback,
+			MODE
 		)
+		players.push(tmpA)
 	}
-	for (let i = 0; i < 20; i++) {
-		if (i >= 7 && i <= 12) continue
-		objectManager.add(
-			objectManager.objects.length,
-			3000,
-			3000 + i * items.list[18].scale * 2,
-			Math.PI / 2,
-			items.list[18].scale,
-			items.list[18].id,
-			items.list[18]
-		)
-		objectManager.add(
-			objectManager.objects.length,
-			3000 + 39 * items.list[18].scale * 2,
-			3000 + i * items.list[18].scale * 2,
-			Math.PI / 2,
-			items.list[18].scale,
-			items.list[18].id,
-			items.list[18]
-		)
-	}
-	sidCount++
-	let tmpA = new Player(
-		UTILS.randomString(10),
-		sidCount,
-		config,
-		UTILS,
-		projectileManager,
-		objectManager,
-		players,
-		ais,
-		items,
-		hats,
-		accessories,
-		server,
-		scoreCallback,
-		iconCallback
-	)
-	players.push(tmpA)
 }
 
 const httpServer = http.createServer((req, res) => {
@@ -1002,5 +1028,93 @@ httpServer.on("upgrade", (request, socket, head) => {
 })
 
 httpServer.listen(PORT, () => {
-	console.log(`Private server listening at http://localhost:${PORT}`)
+	setupServer()
+	commandStart()
 })
+
+async function commandStart() {
+	console.clear()
+	console.log(`Private server listening at http://localhost:${PORT}\n`)
+	const command = await inquirer.prompt({
+		name: "command",
+		type: "list",
+		message: "Custom command",
+		choices: ["Change mode", "Change password", "Change prefix", "Kick player", "Restart server"]
+	})
+	if (command.command === "Change mode") {
+		const mode = await inquirer.prompt({
+			name: "mode",
+			type: "list",
+			message: "Select mode",
+			choices: ["NORMAL", "SANDBOX", "HOCKEY"]
+		})
+		const modeType = [["HOCKEY"], ["SANDBOX", "NORMAL"]]
+		function areInSameGroup(arg1, arg2) {
+			for (const group of modeType) {
+				if (group.includes(arg1) && group.includes(arg2)) {
+					return true
+				}
+			}
+			return false
+		}
+
+		if (areInSameGroup(MODE, mode.mode)) {
+			MODE = mode.mode
+		} else {
+			const restart = await inquirer.prompt({
+				name: "restart",
+				type: "confirm",
+				message: "Are you sure you want to restart server?"
+			})
+			if (restart.restart) {
+				MODE = mode.mode
+				setupServer()
+			}
+		}
+	} else if (command.command === "Change password") {
+		const password = await inquirer.prompt({
+			name: "password",
+			type: "input",
+			message: "Input password:"
+		})
+		PASSWORD = password.password
+	} else if (command.command === "Change prefix") {
+		const prefix = await inquirer.prompt({
+			name: "prefix",
+			type: "list",
+			message: "Select prefix",
+			choices: ["!", "?", "/", "\\", "`", "'", '"', ":", "|", ";", "<", ">", ",", ".", "~"]
+		})
+		PREFIX = prefix.prefix
+	} else if (command.command === "Kick player") {
+		const sid = await inquirer.prompt({
+			name: "sid",
+			type: "number",
+			message: "Input player sid:"
+		})
+		if (sid.sid != null) {
+			for (let i = 0; i < players.length; i++) {
+				let tmpPlayer = players[i]
+				if (tmpPlayer.sid === sid.sid) {
+					if (MODE === "HOCKEY" && sid.sid !== 1) {
+						connection[tmpPlayer.id].close()
+						break
+					} else {
+						connection[tmpPlayer.id].close()
+						break
+					}
+				}
+			}
+		}
+	} else if (command.command === "Restart server") {
+		const restart = await inquirer.prompt({
+			name: "restart",
+			type: "confirm",
+			message: "Are you sure you want to restart server?"
+		})
+		if (restart.restart) {
+			setupServer()
+		}
+	}
+	commandStart()
+}
