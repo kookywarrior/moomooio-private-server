@@ -4,6 +4,14 @@ const msgpack = require("msgpack-lite")
 const http = require("http")
 const url = require("url")
 const inquirer = require("inquirer")
+const fetch = require("node-fetch")
+const package = require("./package.json")
+
+async function checkLatest() {
+	const response = await fetch("https://raw.githubusercontent.com/kookywarrior/moomooio-private-server/main/package.json")
+	const data = await response.json()
+	return data.version === package.version
+}
 
 var MODE = process.env.MODE
 var PASSWORD = process.env.PASSWORD
@@ -933,6 +941,7 @@ function setupServer() {
 
 	if (["NORMAL", "SANDBOX", "ZOMBIE"].includes(MODE)) {
 		config.inSandbox = MODE === "SANDBOX"
+		config.canHitObj = true
 		addBossArenaStones(config.totalRocks - 1, config.rockScales[1], config.mapScale / 2, config.mapScale - config.snowBiomeTop / 2)
 		addTree(200)
 		addBush(100)
@@ -1034,6 +1043,9 @@ httpServer.listen(PORT, () => {
 
 async function commandStart() {
 	console.clear()
+	if (! await checkLatest()) {
+		console.log("Update available at https://github.com/kookywarrior/moomooio-private-server")
+	}
 	console.log(`Private server listening at http://localhost:${PORT}\n`)
 	const command = await inquirer.prompt({
 		name: "command",
