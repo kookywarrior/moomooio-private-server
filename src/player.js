@@ -278,10 +278,10 @@ module.exports = function (
 		this.zIndex = 0
 		this.lockMove = false
 		this.healCol = 0
-		var tmpList
-		var tmpSpeed = UTILS.getDistance(0, 0, this.xVel * delta, this.yVel * delta)
-		var depth = Math.min(4, Math.max(1, Math.round(tmpSpeed / 40)))
-		var tMlt = 1 / depth
+		let tmpList
+		const tmpSpeed = UTILS.getDistance(0, 0, this.xVel * delta, this.yVel * delta)
+		const depth = Math.min(4, Math.max(1, Math.round(tmpSpeed / 40)))
+		const tMlt = 1 / depth
 		for (let i = 0; i < depth; ++i) {
 			if (this.xVel) {
 				this.x += this.xVel * delta * tMlt
@@ -290,9 +290,11 @@ module.exports = function (
 				this.y += this.yVel * delta * tMlt
 			}
 			tmpList = objectManager.getGridArrays(this.x, this.y, this.scale)
+			const visitedObj = []
 			for (var x = 0; x < tmpList.length; ++x) {
 				for (var y = 0; y < tmpList[x].length; ++y) {
-					if (tmpList[x][y].active) {
+					if (tmpList[x][y].active && !visitedObj.includes(tmpList[x][y].sid)) {
+						visitedObj.push(tmpList[x][y].sid)
 						objectManager.checkCollision(this, tmpList[x][y], tMlt)
 					}
 				}
@@ -310,11 +312,11 @@ module.exports = function (
 		// DECEL:
 		if (this.xVel) {
 			this.xVel *= mathPOW(config.playerDecel, delta)
-			if (this.xVel <= 0.01 && this.xVel >= -0.01) this.xVel = 0
+			// if (this.xVel <= 0.01 && this.xVel >= -0.01) this.xVel = 0
 		}
 		if (this.yVel) {
 			this.yVel *= mathPOW(config.playerDecel, delta)
-			if (this.yVel <= 0.01 && this.yVel >= -0.01) this.yVel = 0
+			// if (this.yVel <= 0.01 && this.yVel >= -0.01) this.yVel = 0
 		}
 
 		// MAP BOUNDARIES:
