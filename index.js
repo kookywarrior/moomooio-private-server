@@ -77,7 +77,7 @@ server.sendAll = function (type, data = []) {
 	}
 }
 
-let sidCount = 0
+let playersSid = []
 server.addListener("connection", function (conn) {
 	while (true) {
 		conn.id = UTILS.randomString(10)
@@ -90,6 +90,16 @@ server.addListener("connection", function (conn) {
 		}
 		if (returnvalue) break
 	}
+
+	conn.sid = 1
+	while (true) {
+		if (!playersSid.includes(conn.sid)) {
+			playersSid.push(conn.sid)
+			break
+		}
+		conn.sid++
+	}
+
 	connection[conn.id] = conn
 	conn.on("error", console.log)
 	conn.on("close", function () {
@@ -108,6 +118,10 @@ server.addListener("connection", function (conn) {
 		for (let i = 0; i < players.length; ++i) {
 			if (players[i].id == conn.id) {
 				players.splice(i, 1)
+				const tmpIndex = playersSid.indexOf(conn.sid)
+				if (tmpIndex !== -1) {
+					playersSid.splice(tmpIndex, 1)
+				}
 				updateLeaderboard()
 				iconCallback()
 				break
@@ -258,11 +272,11 @@ server.addListener("connection", function (conn) {
 			if (message.startsWith(PREFIX) && tmpPlayer.admin) {
 				if (message === `${PREFIX}setup`) {
 					for (let i = 0; i < 9; i++) {
-						tmpPlayer.addResource(3, 99999, true)
+						tmpPlayer.addResource(3, 999999, true)
 					}
-					tmpPlayer.addResource(2, 99999, true)
-					tmpPlayer.addResource(1, 99999, true)
-					tmpPlayer.addResource(0, 99999, true)
+					tmpPlayer.addResource(2, 999999, true)
+					tmpPlayer.addResource(1, 999999, true)
+					tmpPlayer.addResource(0, 999999, true)
 				} else if (message.startsWith(`${PREFIX}speed`)) {
 					var speedmlt = message.replace(PREFIX + "speed ", "")
 					if (UTILS.isNumber(parseFloat(speedmlt))) {
@@ -534,10 +548,9 @@ server.addListener("connection", function (conn) {
 		}
 	})
 
-	sidCount++
 	let tmpA = new Player(
 		conn.id,
-		sidCount,
+		conn.sid,
 		config,
 		UTILS,
 		projectileManager,
@@ -927,7 +940,7 @@ function setupServer() {
 	gameObjects = []
 	projectiles = []
 	connection = []
-	sidCount = 0
+	playersSid = []
 	objectManager = new ObjectManager(GameObject, gameObjects, UTILS, config, players, server)
 	aiManager = new AiManager(ais, AI, players, items, objectManager, config, UTILS, scoreCallback, server)
 	projectileManager = new ProjectileManager(Projectile, projectiles, players, ais, objectManager, items, config, UTILS, server)
@@ -985,10 +998,11 @@ function setupServer() {
 				items.list[18]
 			)
 		}
-		sidCount++
+
+		playersSid = [1]
 		let tmpA = new Player(
 			UTILS.randomString(10),
-			sidCount,
+			1,
 			config,
 			UTILS,
 			projectileManager,
