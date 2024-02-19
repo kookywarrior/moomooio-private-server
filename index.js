@@ -188,14 +188,14 @@ server.addListener("connection", function (conn) {
 
 		function resetMoveDir() {
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (tmpPlayer) {
+			if (tmpPlayer && tmpPlayer.alive) {
 				tmpPlayer.resetMoveDir()
 			}
 		}
 
 		function sendAtckState(mouseState, dir) {
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (tmpPlayer) {
+			if (tmpPlayer && tmpPlayer.alive) {
 				if (dir) {
 					tmpPlayer.dir = dir
 				}
@@ -217,14 +217,14 @@ server.addListener("connection", function (conn) {
 
 		function sendMoveDir(newMoveDir) {
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (tmpPlayer) {
+			if (tmpPlayer && tmpPlayer.alive) {
 				tmpPlayer.moveDir = newMoveDir
 			}
 		}
 
 		function sendDir(newDir) {
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (tmpPlayer) {
+			if (tmpPlayer && tmpPlayer.alive) {
 				tmpPlayer.dir = newDir
 			}
 		}
@@ -232,7 +232,7 @@ server.addListener("connection", function (conn) {
 		function selectToBuild(index, wpn) {
 			if (MODE === "HOCKEY") return
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (tmpPlayer) {
+			if (tmpPlayer && tmpPlayer.alive) {
 				if (wpn) {
 					tmpPlayer.buildIndex = -1
 					tmpPlayer.weaponIndex = index
@@ -255,7 +255,7 @@ server.addListener("connection", function (conn) {
 
 		function sendLockGather(type) {
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (tmpPlayer) {
+			if (tmpPlayer && tmpPlayer.alive) {
 				if (type === 0) {
 					tmpPlayer.lockDir = tmpPlayer.lockDir ? 0 : 1
 				} else if (type === 1) {
@@ -266,7 +266,7 @@ server.addListener("connection", function (conn) {
 
 		function sendMessage(message) {
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (!tmpPlayer) return
+			if (!tmpPlayer || !tmpPlayer.alive) return
 			if (message === `${PREFIX}login ${PASSWORD}` && !tmpPlayer.admin) {
 				tmpPlayer.admin = true
 				return
@@ -382,7 +382,7 @@ server.addListener("connection", function (conn) {
 			if (index < 0 || index > items.weapons.length + items.list.length) return
 
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (tmpPlayer) {
+			if (tmpPlayer && tmpPlayer.alive) {
 				if (items.weapons[index]) {
 					if (tmpPlayer.weaponIndex < 9 && index < 9) {
 						tmpPlayer.weaponIndex = index
@@ -419,7 +419,7 @@ server.addListener("connection", function (conn) {
 		function storeFunction(type, id, index) {
 			if (MODE === "HOCKEY") return
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (tmpPlayer) {
+			if (tmpPlayer && tmpPlayer.alive) {
 				var tmpObj = null
 				if (id !== 0) {
 					if (index) {
@@ -470,7 +470,7 @@ server.addListener("connection", function (conn) {
 			if (typeof name !== "string" || name.length <= 0) return
 
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (tmpPlayer) {
+			if (tmpPlayer && tmpPlayer.alive) {
 				if (tribeManager.getTribe(name) == null) {
 					const tmpClan = tribeManager.createTribe(name, tmpPlayer)
 					server.sendAll("ac", [tmpClan.getData()])
@@ -482,7 +482,7 @@ server.addListener("connection", function (conn) {
 		function leaveAlliance() {
 			if (MODE === "HOCKEY") return
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (tmpPlayer) {
+			if (tmpPlayer && tmpPlayer.alive) {
 				if (tmpPlayer.isLeader) {
 					server.sendAll("ad", [tmpPlayer.team])
 					tribeManager.deleteTribe(tmpPlayer.team)
@@ -496,7 +496,7 @@ server.addListener("connection", function (conn) {
 		function kickFromClan(sid) {
 			if (MODE === "HOCKEY") return
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (tmpPlayer && tmpPlayer.isLeader) {
+			if (tmpPlayer && tmpPlayer.alive && tmpPlayer.isLeader) {
 				const tmpObj = findPlayerBySID(sid)
 				if (tmpObj) {
 					tribeManager.getTribe(tmpPlayer.team).removePlayer(tmpObj)
@@ -507,7 +507,7 @@ server.addListener("connection", function (conn) {
 
 		function sendJoinRequest(sid) {
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (tmpPlayer) {
+			if (tmpPlayer && tmpPlayer.alive) {
 				const tmpClan = tribeManager.getTribe(sid)
 				if (tmpClan) {
 					let isRequestSent = false
@@ -528,7 +528,7 @@ server.addListener("connection", function (conn) {
 
 		function decideJoinRequest(sid, join) {
 			let tmpPlayer = findPlayerByID(conn.id)
-			if (tmpPlayer && tmpPlayer.isLeader) {
+			if (tmpPlayer && tmpPlayer.alive && tmpPlayer.isLeader) {
 				const tmpObj = findPlayerBySID(sid)
 				const tmpClan = tribeManager.getTribe(tmpPlayer.team)
 				if (tmpClan && tmpObj) {
@@ -545,7 +545,7 @@ server.addListener("connection", function (conn) {
 		function sendMapPing(type) {
 			if (type) {
 				let tmpPlayer = findPlayerByID(conn.id)
-				if (tmpPlayer) {
+				if (tmpPlayer && tmpPlayer.alive) {
 					if (tmpPlayer.team) {
 						for (let i = 0; i < players.length; i++) {
 							if (players[i] && players[i].team === tmpPlayer.team) {
