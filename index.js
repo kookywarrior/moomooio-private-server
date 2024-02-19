@@ -396,8 +396,18 @@ server.addListener("connection", function (conn) {
 					if (tmpPlayer.buildIndex !== -1 && items.list[index].group.id === items.list[tmpPlayer.buildIndex].group.id) {
 						tmpPlayer.buildIndex = index
 					}
-					tmpPlayer.items[items.list[index].group.id] = index
-					tmpPlayer.items = tmpPlayer.items.filter((item) => item != undefined)
+
+					let addedItem = false
+					for (let i = 0; i < tmpPlayer.items.length; i++) {
+						if (items.list[tmpPlayer.items[i]].group.id === items.list[index].group.id) {
+							tmpPlayer.items[i] = index
+							addedItem = true
+							break
+						}
+					}
+					if (!addedItem) {
+						tmpPlayer.items.push(index)
+					}
 					server.send(conn.id, "17", [tmpPlayer.items])
 				}
 				tmpPlayer.upgrAge++
