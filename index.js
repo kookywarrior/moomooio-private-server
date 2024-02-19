@@ -201,7 +201,6 @@ server.addListener("connection", function (conn) {
 				}
 				tmpPlayer.mouseState = mouseState
 				if (mouseState) {
-					tmpPlayer.gathering = mouseState
 					if (tmpPlayer.buildIndex >= 0) {
 						for (let i = 0; i < items.list.length; i++) {
 							if (i === tmpPlayer.buildIndex) {
@@ -209,6 +208,8 @@ server.addListener("connection", function (conn) {
 								break
 							}
 						}
+					} else {
+						tmpPlayer.gathering = mouseState
 					}
 				}
 			}
