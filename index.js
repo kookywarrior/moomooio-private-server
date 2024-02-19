@@ -200,15 +200,16 @@ server.addListener("connection", function (conn) {
 					tmpPlayer.dir = dir
 				}
 				tmpPlayer.mouseState = mouseState
-				if (mouseState && tmpPlayer.buildIndex >= 0) {
-					for (let i = 0; i < items.list.length; i++) {
-						if (i === tmpPlayer.buildIndex) {
-							tmpPlayer.buildItem(items.list[i])
-							break
+				if (mouseState) {
+					tmpPlayer.gathering = mouseState
+					if (tmpPlayer.buildIndex >= 0) {
+						for (let i = 0; i < items.list.length; i++) {
+							if (i === tmpPlayer.buildIndex) {
+								tmpPlayer.buildItem(items.list[i])
+								break
+							}
 						}
 					}
-				} else {
-					tmpPlayer.gathering = mouseState
 				}
 			}
 		}
@@ -1057,7 +1058,7 @@ httpServer.listen(PORT, () => {
 
 async function commandStart() {
 	console.clear()
-	if (! await checkLatest()) {
+	if (!(await checkLatest())) {
 		console.log("Update available at https://github.com/kookywarrior/moomooio-private-server")
 	}
 	console.log(`Private server listening at http://localhost:${PORT}\n`)
