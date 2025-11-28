@@ -165,8 +165,8 @@ const PACKETCODE = {
 		storeEquipOrBuy: "c",
 		sendChat: "6",
 		resetMoveDir: "e",
-		sendAtckState: "n",
-		sendMoveDir: "a",
+		sendAtckState: "F",
+		sendMoveDir: "9",
 		sendLockDirOrAutoGather: "K",
 		sendMapPing: "S",
 		selectToBuild: "z",
@@ -176,7 +176,6 @@ const PACKETCODE = {
 		pingSocket: "0"
 	},
 	RECEIVE: {
-		ioInit: "io-init",
 		setInitData: "A",
 		disconnect: "B",
 		setupGame: "C",
@@ -212,7 +211,7 @@ const PACKETCODE = {
 		updateMinimap: "7",
 		showText: "8",
 		pingMap: "9",
-		pingSocketResponse: "10"
+		pingSocketResponse: "0"
 	}
 }
 const OLDPACKETCODE = {
