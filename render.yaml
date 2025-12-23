@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: moomoo-private-server
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm run start
+    envVars:
+      - key: PORT
+        value: 1234
+      - key: PREFIX
+        value: "!"
+      - key: PASSWORD
+        value: kooky
+      - key: MODE
+        value: NORMAL
