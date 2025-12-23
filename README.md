@@ -73,6 +73,9 @@ Available Modes:
 - SANDBOX
 - HOCKEY
 
+## Host Online
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/kookywarrior/moomooio-private-server)
+
 ## Reference
 
 - https://moomoo.io/assets/index-ffd48cb5.js
