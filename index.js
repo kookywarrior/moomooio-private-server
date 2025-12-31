@@ -418,6 +418,15 @@ server.addListener("connection", function (conn) {
 
 		function storeFunction(type, id, index) {
 			if (MODE === "HOCKEY") return
+
+            try {
+                type = parseInt(type)
+                id = parseInt(id)
+                index = parseInt(index)
+            } catch (error) {
+                return
+            }
+
 			let tmpPlayer = findPlayerByID(conn.id)
 			if (tmpPlayer && tmpPlayer.alive) {
 				var tmpObj = null
@@ -437,15 +446,26 @@ server.addListener("connection", function (conn) {
 							}
 						}
 					}
+				} else {
+					if (index) {
+						tmpPlayer.tail = null
+						tmpPlayer.tailIndex = id
+                        server.send(conn.id, "us", [1, id, index])
+					} else {
+						tmpPlayer.skin = null
+						tmpPlayer.skinIndex = id
+                        server.send(conn.id, "us", [1, id, index])
+					}
 				}
 
 				if (index) {
 					if (type) {
 						if (tmpObj.price <= tmpPlayer.points) {
 							tmpPlayer.addResource(3, -tmpObj.price)
+							tmpPlayer.tails[id] = 1
 							server.send(conn.id, "us", [0, id, index])
 						}
-					} else {
+					} else if (tmpPlayer.tails[id]) {
 						tmpPlayer.tail = tmpObj
 						tmpPlayer.tailIndex = id
 						server.send(conn.id, "us", [1, id, index])
@@ -454,9 +474,10 @@ server.addListener("connection", function (conn) {
 					if (type) {
 						if (tmpObj.price <= tmpPlayer.points) {
 							tmpPlayer.addResource(3, -tmpObj.price)
+							tmpPlayer.skins[id] = 1
 							server.send(conn.id, "us", [0, id, index])
 						}
-					} else {
+					} else if (tmpPlayer.skins[id]) {
 						tmpPlayer.skin = tmpObj
 						tmpPlayer.skinIndex = id
 						server.send(conn.id, "us", [1, id, index])
@@ -560,23 +581,7 @@ server.addListener("connection", function (conn) {
 		}
 	})
 
-	let tmpA = new Player(
-		conn.id,
-		conn.sid,
-		config,
-		UTILS,
-		projectileManager,
-		objectManager,
-		players,
-		ais,
-		items,
-		hats,
-		accessories,
-		server,
-		scoreCallback,
-		iconCallback,
-		MODE
-	)
+	let tmpA = new Player(conn.id, conn.sid, config, UTILS, projectileManager, objectManager, players, ais, items, hats, accessories, server, scoreCallback, iconCallback, MODE)
 	players.push(tmpA)
 	tmpA.visible = false
 
@@ -616,12 +621,7 @@ setInterval(() => {
 			} else if (tmpObj.skin && tmpObj.skin.turret) {
 				var tmpPlayer, bestDst, tmpDist
 				for (let i = 0; i < players.length; ++i) {
-					if (
-						players[i].alive &&
-						!(players[i].skin && players[i].skin.antiTurret) &&
-						players[i].sid !== tmpObj.sid &&
-						!(tmpObj.team && tmpObj.team == players[i].team)
-					) {
+					if (players[i].alive && !(players[i].skin && players[i].skin.antiTurret) && players[i].sid !== tmpObj.sid && !(tmpObj.team && tmpObj.team == players[i].team)) {
 						tmpDist = UTILS.getDistance(tmpObj.x, tmpObj.y, players[i].x, players[i].y)
 						if (tmpDist <= tmpObj.skin.turret.range && (!tmpPlayer || tmpDist < bestDst)) {
 							bestDst = tmpDist
@@ -661,12 +661,7 @@ setInterval(() => {
 		} else {
 			var tmpPlayer, bestDst, tmpDist
 			for (let i = 0; i < players.length; ++i) {
-				if (
-					players[i].alive &&
-					!(players[i].skin && players[i].skin.antiTurret) &&
-					players[i].sid !== tmpObj.owner.sid &&
-					!(tmpObj.owner.team && tmpObj.owner.team == players[i].team)
-				) {
+				if (players[i].alive && !(players[i].skin && players[i].skin.antiTurret) && players[i].sid !== tmpObj.owner.sid && !(tmpObj.owner.team && tmpObj.owner.team == players[i].team)) {
 					tmpDist = UTILS.getDistance(tmpObj.x, tmpObj.y, players[i].x, players[i].y)
 					if (tmpDist <= tmpObj.shootRange && (!tmpPlayer || tmpDist < bestDst)) {
 						bestDst = tmpDist
@@ -979,27 +974,11 @@ function setupServer() {
 		config.canHitObj = false
 		for (let i = 0; i < 40; i++) {
 			objectManager.add(objectManager.objects.length, 3000 + i * items.list[18].scale * 2, 3000, 0, items.list[18].scale, items.list[18].id, items.list[18])
-			objectManager.add(
-				objectManager.objects.length,
-				3000 + i * items.list[18].scale * 2,
-				3000 + 19 * items.list[18].scale * 2,
-				0,
-				items.list[18].scale,
-				items.list[18].id,
-				items.list[18]
-			)
+			objectManager.add(objectManager.objects.length, 3000 + i * items.list[18].scale * 2, 3000 + 19 * items.list[18].scale * 2, 0, items.list[18].scale, items.list[18].id, items.list[18])
 		}
 		for (let i = 0; i < 20; i++) {
 			if (i >= 7 && i <= 12) continue
-			objectManager.add(
-				objectManager.objects.length,
-				3000,
-				3000 + i * items.list[18].scale * 2,
-				Math.PI / 2,
-				items.list[18].scale,
-				items.list[18].id,
-				items.list[18]
-			)
+			objectManager.add(objectManager.objects.length, 3000, 3000 + i * items.list[18].scale * 2, Math.PI / 2, items.list[18].scale, items.list[18].id, items.list[18])
 			objectManager.add(
 				objectManager.objects.length,
 				3000 + 39 * items.list[18].scale * 2,
@@ -1012,23 +991,7 @@ function setupServer() {
 		}
 
 		playersSid = [1]
-		let tmpA = new Player(
-			UTILS.randomString(10),
-			1,
-			config,
-			UTILS,
-			projectileManager,
-			objectManager,
-			players,
-			ais,
-			items,
-			hats,
-			accessories,
-			server,
-			scoreCallback,
-			iconCallback,
-			MODE
-		)
+		let tmpA = new Player(UTILS.randomString(10), 1, config, UTILS, projectileManager, objectManager, players, ais, items, hats, accessories, server, scoreCallback, iconCallback, MODE)
 		players.push(tmpA)
 	}
 }
